@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RaMonitor - School Board Directory</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel='icon' href='{{ url_for('static', filename='assets/images/other/favicon.jpg') }}' type='image/x-icon' />
+</head>
+<body>
+    <div class="exit-button" onclick="exitToScreensaver()">✕</div>
+    <button class="dark-mode-toggle" onclick="toggleDarkMode()">🌙</button>
+    <button class="back-button" onclick="goBack()" data-testid="back-button">← Back</button>
+    
+    <div class="container">
+        <h1 class="page-title">School Board Directory</h1>
+        <p class="page-subtitle">Faculty and Staff by Department</p>
+        
+        <div class="department-tabs" id="departmentTabs">
+            <button class="tab-button active" onclick="showDepartment('administration', event)" data-testid="admin-tab">Administration</button>
+<button class="tab-button" onclick="showDepartment('science', event)" data-testid="science-tab">Science</button>
+<button class="tab-button" onclick="showDepartment('math', event)" data-testid="math-tab">Mathematics</button>
+<button class="tab-button" onclick="showDepartment('english', event)" data-testid="english-tab">English</button>
+<button class="tab-button" onclick="showDepartment('techvoc', event)" data-testid="techvoc-tab">TechVoc</button>
+<button class="tab-button" onclick="showDepartment('mapeh', event)" data-testid="mapeh-tab">MAPEH</button>
+<button class="tab-button" onclick="showDepartment('values', event)" data-testid="values-tab">Values Education</button>
+<button class="tab-button" onclick="showDepartment('filipino', event)" data-testid="filipino-tab">Filipino</button>
+<button class="tab-button" onclick="showDepartment('socsci', event)" data-testid="socsci-tab">Social Sciences</button>
+<button class="tab-button" onclick="showDepartment('shs', event)" data-testid="shs-tab">Senior High School</button>
+        </div>
+        
+        <div id="facultyContent" class="faculty-content"></div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script>
+        async function fetchFaculty() {
+    const res = await fetch('/api/faculty');
+    const data = await res.json();
+    return data.reduce((acc, member) => {
+        if (!acc[member.department]) acc[member.department] = [];
+        acc[member.department].push(member);
+        return acc;
+    }, {});
+}
+
+async function showDepartment(dept, event) {
+    const facultyData = await fetchFaculty();
+
+    // Remove 'active' from all tabs if event exists
+    if (event) {
+        const tabs = document.querySelectorAll('.tab-button');
+        tabs.forEach(tab => tab.classList.remove('active'));
+        event.target.classList.add('active');
+    }
+
+    const content = document.getElementById('facultyContent');
+    const faculty = facultyData[dept] || [];
+
+    content.innerHTML = faculty.map(member => `
+        <div class="faculty-card">
+            <div class="faculty-avatar">${member.name.charAt(0)}</div>
+            <div class="faculty-details">
+                <h3>${member.name}</h3>
+                <p class="faculty-position">${member.position}</p>
+                <p class="faculty-email">${member.email}</p>
+            </div>
+        </div>
+    `).join('');
+}
+
+// Show default
+showDepartment('administration');
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RaMonitor - School History</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel='icon' href='{{ url_for('static', filename='assets/images/other/favicon.jpg') }}' type='image/x-icon' />
+    
+    <style>
+        /* Extra styling for placeholders and interactivity */
+        .placeholder-img {
+            width: 100%;
+            max-height: 350px;
+            object-fit: cover;
+            border-radius: 10px;
+            transition: transform 0.3s ease;
+        }
+        .placeholder-img:hover {
+            transform: scale(1.05);
+        }
+
+        .timeline-item {
+            display: flex;
+            margin-bottom: 20px;
+            position: relative;
+        }
+        .timeline-item::before {
+            content: "";
+            position: absolute;
+            left: -15px;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background-color: #ccc;
+            border-radius: 2px;
+        }
+        .timeline-year {
+            font-weight: bold;
+            width: 80px;
+            flex-shrink: 0;
+        }
+        .timeline-content {
+            background-color: #f5f5f5;
+            padding: 15px;
+            border-radius: 8px;
+            flex-grow: 1;
+            transition: background-color 0.3s;
+        }
+        .timeline-content:hover {
+            background-color: #e0f7fa;
+        }
+
+        .value-card {
+            text-align: center;
+            padding: 20px;
+            border-radius: 10px;
+            background-color: #f9f9f9;
+            transition: transform 0.3s, background-color 0.3s;
+        }
+        .value-card:hover {
+            transform: translateY(-5px);
+            background-color: #d1f7d6;
+        }
+
+        .values-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .history-hero img {
+            width: 100%;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="exit-button" onclick="exitToScreensaver()">✕</div>
+    <button class="dark-mode-toggle" onclick="toggleDarkMode()">🌙</button>
+    <button class="back-button" onclick="goBack()">← Back</button>
+
+    <div class="container history-container">
+        <h1 class="page-title">School History</h1>
+        <p class="page-subtitle">Dr. Ramon de Santos National High School Legacy</p>
+
+        <div class="history-content">
+            <!-- Hero -->
+            <div class="history-hero">
+                <img src="{{ url_for('static', filename='assets/images/other/history.jpg') }}" alt="School Building" class="placeholder-img">
+            </div>
+
+            <!-- Text Sections -->
+            <div class="history-text">
+
+                <section class="history-section">
+                    <h2>Our Foundation</h2>
+                    <p>It was founded in July 1966 through a municipal council of Cuyapo. The first
+                        petitioners on the grant of the establishment of the school were a group of elementary
+                        teachers of San Antonio Elementary School led by Severina Santero, Crispino Pineda, Leoncio Meemita,
+                        Arnulfo Mangabat Sr., Purificacion Evangelista, Emilio Jose, Magdalena Jose, and Petra Gajeton
+                        who had filed the resolution of the then 1st secondary school in Cuyapo Municipal Council.
+                    </p>
+                </section>
+
+                <section class="history-section">
+                    <h2>Our Namesake</h2>
+                    <p>The school lot was donated by Pochola de Santos, daughter of the late Dr. Ramon de Santos,
+                        the lot owner. The school was named after the landowner's name covering one hectare of the lot adjacent to
+                        San Antonio Elementary School where it was housed for twenty-two years.
+                    </p>
+                </section>
+
+                <section class="history-section">
+                    <h2>Milestones</h2>
+                    <div class="timeline">
+                        <div class="timeline-item">
+                            <div class="timeline-year">1966</div>
+                            <div class="timeline-content">
+                                <h3>School Founding</h3>
+                                <p>Dr. Ramon de Santos Barangay High School opened with 56 first-year students and 30 second-year students coming from Cuyapo and Guimba.</p>
+                            </div>
+                        </div>
+                        <div class="timeline-item">
+                            <div class="timeline-year">1984</div>
+                            <div class="timeline-content">
+                                <h3>Newly Nationalized High School</h3>
+                                <p>The school was officially recognized as a nationalized high school in 1984 based on the Batas Pambansa Blg. 639.</p>
+                            </div>
+                        </div>
+                        <div class="timeline-item">
+                            <div class="timeline-year">2000s</div>
+                            <div class="timeline-content">
+                                <h3>Opening of Special Programs</h3>
+                                <p>The school began offering special programs such as Science, Technology, and Engineering (STE), and Special Program in Information and Communications Technology (SP-ICT).</p>
+                            </div>
+                        </div>
+                        <div class="timeline-item">
+                            <div class="timeline-year">2016</div>
+                            <div class="timeline-content">
+                                <h3>Opening of Senior High School</h3>
+                                <p>The school officially opened its Senior High School program in 2016-2017.</p>
+                            </div>
+                        </div>
+                        <div class="timeline-item">
+                            <div class="timeline-year">2026</div>
+                            <div class="timeline-content">
+                                <h3>RaMonitor Launch</h3>
+                                <p>The RaMonitor system was launched in 2024 to enhance student monitoring and academic performance tracking.</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="history-section">
+                    <h2>DepEd Vision</h2>
+                    <p>We dream of Filipinos who passionately love their country and whose values and competencies enable
+                        them to realize their full potential and contribute meaningfully to building the nation. As a learner-centered public
+                    institution,  the Department of Education continuously improves itself to better serve
+                its stakeholders.</p>
+                    </p>
+                </section>
+
+                <section class="history-section">
+                    <h2>Core Values</h2>
+                    <div class="values-grid">
+                        <div class="value-card">
+                            <h3>MakaDiyos</h3>
+                            <p>Respect for God and the belief that all life is sacred.</p>
+                        </div>
+                        <div class="value-card">
+                            <h3>Makatao</h3>
+                            <p>Respect for fellow human beings and the value of community.</p>
+                        </div>
+                        <div class="value-card">
+                            <h3>Makakalikasan</h3>
+                            <p>Respect for nature and the environment.</p>
+                        </div>
+                        <div class="value-card">
+                            <h3>Makabansa</h3>
+                            <p>Love for the country and a sense of patriotism.</p>
+                        </div>
+                    </div>
+                </section>
+
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

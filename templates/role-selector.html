@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RaMonitor - Select Your Role</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel='icon' href='{{ url_for('static', filename='assets/images/other/favicon.jpg') }}' type='image/x-icon' />
+    
+</head>
+<body>
+    <div class="exit-button" onclick="exitToScreensaver()">✕</div>
+    
+    <div class="container role-selector-container">
+        <h1 class="page-title">Welcome to RaMonitor</h1>
+        <p class="page-subtitle">Please select your role to continue</p>
+        
+        <div class="role-grid">
+            <div class="role-card" onclick="selectRole('Student')" data-testid="student-role-btn">
+                <div class="role-icon">🎓</div>
+                <h3>Student</h3>
+                <p>Access campus resources and information</p>
+            </div>
+            
+            <div class="role-card" onclick="selectRole('School Personnel')" data-testid="personnel-role-btn">
+                <div class="role-icon">👨‍🏫</div>
+                <h3>School Personnel</h3>
+                <p>Faculty and staff members</p>
+            </div>
+            
+            <div class="role-card" onclick="selectRole('Guest')" data-testid="guest-role-btn">
+                <div class="role-icon">👤</div>
+                <h3>Guest</h3>
+                <p>Visitors and community members</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script>
+        function selectRole(role) {
+            localStorage.setItem('selectedRole', role);
+            localStorage.setItem('roleTimestamp', new Date().toISOString());
+            
+            const interactions = JSON.parse(localStorage.getItem('interactions') || '[]');
+            interactions.push({
+                role: role,
+                timestamp: new Date().toISOString()
+            });
+            localStorage.setItem('interactions', JSON.stringify(interactions));
+            
+            window.location.href = '/modules';
+        }
+
+        function selectRole(role) {
+    localStorage.setItem("kioskRole", role);
+    window.location.href = "/modules";
+}
+
+    </script>
+</body>
+</html>

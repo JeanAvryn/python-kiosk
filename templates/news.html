@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RaMonitor - School News</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel='icon' href='{{ url_for('static', filename='assets/images/other/favicon.jpg') }}' type='image/x-icon' />
+    
+</head>
+<body>
+    <div class="exit-button" onclick="exitToScreensaver()">✕</div>
+    <button class="dark-mode-toggle" onclick="toggleDarkMode()">🌙</button>
+    <button class="back-button" onclick="goBack()" data-testid="back-button">← Back</button>
+    
+    <div class="container">
+        <h1 class="page-title">School News & Announcements</h1>
+        <p class="page-subtitle">Stay updated with the latest from our school</p>
+        
+        <div class="news-grid" id="newsGrid"></div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script>
+        async function fetchNews() {
+    const res = await fetch('/api/news');
+    const data = await res.json();
+    return data.sort((a, b) => new Date(b.date) - new Date(a.date));
+}
+
+async function displayNews() {
+    const newsGrid = document.getElementById('newsGrid');
+    const newsData = await fetchNews();
+    
+    newsGrid.innerHTML = newsData.map(article => `
+        <article class="news-article" onclick="showArticle(${article.id})">
+            <div class="news-image" style="background-image: url('${article.image}')"></div>
+            <div class="news-content">
+                <div class="news-meta">
+                    <span class="news-category">${article.category}</span>
+                    <span class="news-date">${new Date(article.date).toLocaleDateString()}</span>
+                </div>
+                <h3 class="news-title">${article.title}</h3>
+                <p class="news-excerpt">${article.content.substring(0, 120)}...</p>
+            </div>
+        </article>
+    `).join('');
+}
+
+// Modal stays the same
+function showArticle(id) {
+    fetch('/api/news')
+        .then(res => res.json())
+        .then(newsData => {
+            const article = newsData.find(a => a.id === id);
+            if (!article) return;
+            
+            const modal = document.createElement('div');
+            modal.className = 'modal';
+            modal.innerHTML = `
+                <div class="modal-content news-modal">
+                    <span class="modal-close" onclick="this.parentElement.parentElement.remove()">&times;</span>
+                    <div class="news-modal-image" style="background-image: url('${article.image}')"></div>
+                    <div class="news-modal-body">
+                        <div class="news-meta">
+                            <span class="news-category">${article.category}</span>
+                            <span class="news-date">${new Date(article.date).toLocaleDateString()}</span>
+                        </div>
+                        <h2>${article.title}</h2>
+                        <p>${article.content}</p>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        });
+}
+
+// Show news on page load
+displayNews();
+
+    </script>
+</body>
+</html>

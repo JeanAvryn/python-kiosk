@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RaMonitor - Admin Panel</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel='icon' href='{{ url_for('static', filename='assets/images/other/favicon.jpg') }}' type='image/x-icon' />
+</head>
+<body>
+    <div class="admin-container" id="adminContainer">
+        <!-- Login Screen -->
+        <div class="admin-login" id="loginScreen">
+            <div class="admin-login-box">
+                <h1>RaMonitor Admin Panel</h1>
+                <p>Enter password to access administration</p>
+                <input type="password" id="adminPassword" placeholder="Password" data-testid="admin-password">
+                <button onclick="login()" data-testid="login-btn">Login</button>
+                <p class="admin-note">Default password: <strong>admin123</strong></p>
+                <a href="/" class="back-link">← Back to Kiosk</a>
+            </div>
+        </div>
+        
+        <!-- Admin Dashboard -->
+        <div class="admin-dashboard" id="adminDashboard" style="display: none;">
+            <div class="admin-header">
+                <h1>RaMonitor Admin Panel</h1>
+                <button onclick="logout()" class="logout-btn" data-testid="logout-btn">Logout</button>
+            </div>
+            
+            <div class="admin-tabs">
+                <button class="admin-tab active" onclick="showAdminSection('news')" data-testid="news-tab">School News</button>
+                <button class="admin-tab" onclick="showAdminSection('research')" data-testid="research-tab">Research</button>
+                <button class="admin-tab" onclick="showAdminSection('faculty')" data-testid="faculty-tab">Faculty</button>
+                <button class="admin-tab" onclick="showAdminSection('analytics')" data-testid="analytics-tab">Analytics</button>
+            </div>
+            
+            <div id="adminContent" class="admin-content"></div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+</body>
+</html>

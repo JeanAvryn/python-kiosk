@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RaMonitor - Research Repository</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel='icon' href='{{ url_for('static', filename='assets/images/other/favicon.jpg') }}' type='image/x-icon' />
+    
+</head>
+<body>
+    <div class="exit-button" onclick="exitToScreensaver()">✕</div>
+    <button class="dark-mode-toggle" onclick="toggleDarkMode()">🌙</button>
+    <button class="back-button" onclick="goBack()">← Back</button>
+    
+    <div class="container">
+        <h1 class="page-title">Research Repository</h1>
+        <p class="page-subtitle">Academic Research by Students</p>
+        
+        <div class="search-section">
+            <input type="text" id="searchInput" placeholder="Search by title, author, or keywords..." class="search-input">
+            <div class="filter-buttons">
+                <button class="filter-btn active" onclick="filterResearch('all')">All</button>
+                <button class="filter-btn" onclick="filterResearch('STEM')">STEM</button>
+                <button class="filter-btn" onclick="filterResearch('Humanities')">Humanities</button>
+                <button class="filter-btn" onclick="filterResearch('Social Science')">Social Science</button>
+                <button class="filter-btn" onclick="filterResearch('Applied Arts')">Applied Arts</button>
+            </div>
+        </div>
+        
+        <div class="research-grid" id="researchGrid"></div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script>
+        let researchData = [];
+        let currentFilter = 'all';
+
+        async function fetchResearch() {
+            const res = await fetch('/api/research');
+            researchData = await res.json();
+            researchData.sort((a, b) => b.year - a.year);
+            displayResearch();
+        }
+
+        function displayResearch(data = researchData) {
+            const grid = document.getElementById('researchGrid');
+            
+            if (data.length === 0) {
+                grid.innerHTML = '<p class="no-results">No research papers found.</p>';
+                return;
+            }
+            
+            grid.innerHTML = data.map(paper => `
+                <div class="research-card" onclick="showResearch(${paper.id})">
+                    <div class="research-field-tag">${paper.field}</div>
+                    <h3 class="research-title">${paper.title}</h3>
+                    <p class="research-authors">By: ${paper.authors}</p>
+                    <p class="research-year">Year: ${paper.year}</p>
+                    <div class="research-keywords">
+                        ${paper.keywords ? paper.keywords.split(',').map(kw => `<span class="keyword-tag">${kw}</span>`).join('') : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function filterResearch(field) {
+            currentFilter = field;
+            const buttons = document.querySelectorAll('.filter-btn');
+            buttons.forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+
+            const filtered = field === 'all' ? researchData : researchData.filter(r => r.field === field);
+            const searchTerm = document.getElementById('searchInput').value;
+            displayResearch(searchTerm ? searchResearchData(filtered, searchTerm) : filtered);
+        }
+
+        function searchResearchData(data, term) {
+            const lowerTerm = term.toLowerCase();
+            return data.filter(paper => 
+                paper.title.toLowerCase().includes(lowerTerm) ||
+                paper.authors.toLowerCase().includes(lowerTerm) ||
+                (paper.keywords && paper.keywords.toLowerCase().includes(lowerTerm)) ||
+                paper.abstract.toLowerCase().includes(lowerTerm)
+            );
+        }
+
+        document.getElementById('searchInput').addEventListener('input', function(e) {
+            const searchTerm = e.target.value;
+            const baseData = currentFilter === 'all' ? researchData : researchData.filter(r => r.field === currentFilter);
+            displayResearch(searchTerm ? searchResearchData(baseData, searchTerm) : baseData);
+        });
+
+        function showResearch(id) {
+            const paper = researchData.find(p => p.id === id);
+            if (!paper) return;
+            
+            const modal = document.createElement('div');
+            modal.className = 'modal';
+            modal.innerHTML = `
+                <div class="modal-content research-modal">
+                    <span class="modal-close" onclick="this.parentElement.parentElement.remove()">&times;</span>
+                    <div class="research-field-tag">${paper.field}</div>
+                    <h2>${paper.title}</h2>
+                    <p class="research-authors"><strong>Authors:</strong> ${paper.authors}</p>
+                    <p class="research-year"><strong>Year:</strong> ${paper.year}</p>
+                    <div class="research-keywords">
+                        ${paper.keywords ? paper.keywords.split(',').map(kw => `<span class="keyword-tag">${kw}</span>`).join('') : ''}
+                    </div>
+                    <h3>Abstract</h3>
+                    <p>${paper.abstract}</p>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+
+        fetchResearch();
+    </script>
+</body>
+</html>

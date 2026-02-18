@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>School Campus Map</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+<link rel='icon' href='{{ url_for('static', filename='assets/images/other/favicon.jpg') }}' type='image/x-icon' />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0f1a17;
+    --panel: #1a2820;
+    --accent: #7ec8a0;
+    --accent2: #c8e6d4;
+    --text: #e8f0eb;
+    --muted: #6b8a77;
+    --border: #2a3f34;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  header {
+    padding: 1.5rem 2.5rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: baseline;
+    gap: 1rem;
+    background: var(--panel);
+  }
+
+  header h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.6rem;
+    color: var(--accent);
+    letter-spacing: 0.02em;
+  }
+
+  header p {
+    font-size: 0.82rem;
+    color: var(--muted);
+    font-weight: 300;
+  }
+
+  .layout {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  .map-container {
+    flex: 1;
+    overflow: auto;
+    padding: 2rem;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+  }
+
+  .map-wrapper {
+    position: relative;
+    display: inline-block;
+  }
+
+  #map-svg {
+    width: 500px;
+    height: auto;
+    display: block;
+    filter: drop-shadow(0 8px 40px rgba(0,0,0,0.5));
+  }
+
+  /* Clickable buildings glow on hover */
+  .clickable {
+    cursor: pointer;
+    transition: filter 0.2s, opacity 0.2s;
+  }
+  .clickable:hover {
+    filter: brightness(1.5) drop-shadow(0 0 8px rgba(126,200,160,0.7));
+    opacity: 0.9;
+  }
+  .clickable.active {
+    filter: brightness(1.8) drop-shadow(0 0 12px rgba(126,200,160,1));
+  }
+
+  /* Info panel */
+  .info-panel {
+    width: 300px;
+    min-width: 300px;
+    background: var(--panel);
+    border-left: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.3s ease;
+  }
+
+  .info-panel-inner {
+    padding: 2rem 1.5rem;
+    flex: 1;
+  }
+
+  .info-panel .hint {
+    color: var(--muted);
+    font-size: 0.85rem;
+    font-weight: 300;
+    line-height: 1.6;
+    margin-top: 3rem;
+    text-align: center;
+  }
+
+  .info-panel .hint svg {
+    display: block;
+    margin: 0 auto 1rem;
+    opacity: 0.4;
+  }
+
+  .building-info {
+    display: none;
+  }
+
+  .building-info.visible {
+    display: block;
+    animation: fadeSlide 0.25s ease;
+  }
+
+  @keyframes fadeSlide {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .building-info .tag {
+    font-size: 0.7rem;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 0.75rem;
+  }
+
+  .building-info h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.5rem;
+    color: var(--text);
+    line-height: 1.2;
+    margin-bottom: 1rem;
+    text-transform: capitalize;
+  }
+
+  .divider {
+    height: 2px;
+    width: 40px;
+    background: var(--accent);
+    margin-bottom: 1rem;
+    border-radius: 2px;
+  }
+
+  .building-info p {
+    font-size: 0.9rem;
+    color: var(--accent2);
+    line-height: 1.7;
+    font-weight: 300;
+  }
+
+  .legend {
+    padding: 1.5rem;
+    border-top: 1px solid var(--border);
+  }
+
+  .legend-title {
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.75rem;
+  }
+
+  .legend-items {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.78rem;
+    color: var(--muted);
+  }
+
+  .legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Campus Map</h1>
+  <p>Click any building to learn more</p>
+</header>
+
+<div class="exit-button" onclick="exitToScreensaver()">✕</div>
+
+<div class="layout">
+  <div class="map-container">
+    <div class="map-wrapper">
+      <svg id="map-svg" width="2614" height="4275" viewBox="0 0 2614 4275" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect width="2614" height="4275" fill="#1E1E1E"/>
+        <g id="map">
+          <rect id="Rectangle 27" x="1219" y="1636" width="57" height="2580" fill="#CCC2B7"/>
+          <rect id="Rectangle 30" x="949" y="3665" width="29" height="551" fill="#CCC2B7"/>
+          <rect id="GRADE 9 WING" x="0" y="3648" width="162" height="530" fill="#3F676A" class="clickable"/>
+          <rect id="grade 7 wing" x="1299" y="3639" width="162" height="530" fill="#3F676A" class="clickable"/>
+          <rect id="grade 10 rooms" x="1299" y="3048" width="162" height="530" fill="#3F676A" class="clickable"/>
+          <rect id="grade 8 wing" x="1299" y="2327" width="162" height="530" fill="#3F676A" class="clickable"/>
+          <rect id="grade 10 wing 2" x="1034" y="2518" width="162" height="530" fill="#0F1863" class="clickable"/>
+          <rect id="Rectangle 1" y="4198" width="518" height="18" fill="#D9D9D9"/>
+          <rect id="Rectangle 25" x="194" y="3073" width="57" height="1134" fill="#CCC2B7"/>
+          <rect id="Rectangle 2" y="4198" width="518" height="18" fill="#D9D9D9"/>
+          <rect id="Rectangle 3" y="4177" width="518" height="39" fill="#D9D9D9"/>
+          <rect id="Rectangle 5" y="4177" width="518" height="98" fill="#D9D9D9"/>
+          <rect id="Rectangle 4" x="518" y="4198" width="141" height="18" fill="#3DF652"/>
+          <rect id="Rectangle 7" x="518" y="4198" width="141" height="77" fill="#3DF652"/>
+          <rect id="Rectangle 6" x="659" y="4177" width="518" height="98" fill="#D9D9D9"/>
+          <rect id="Rectangle 33" x="1315" y="4177" width="227" height="98" fill="#D9D9D9"/>
+          <rect id="Rectangle 8" x="1177" y="4198" width="141" height="77" fill="#3DF652"/>
+          <rect id="Rectangle 10" x="556" y="3648" width="65" height="551" fill="#CCC2B7"/>
+          <rect id="PPP" x="284" y="3734" width="113" height="378" fill="#7B9178" class="clickable"/>
+          <ellipse id="Ellipse 3" cx="696.5" cy="3943" rx="20.5" ry="22" fill="#2D641D"/>
+          <ellipse id="Ellipse 4" cx="696.5" cy="3943" rx="20.5" ry="22" fill="#2D641D"/>
+          <ellipse id="Ellipse 9" cx="782" cy="2984.5" rx="64" ry="68.5" fill="#2D641D"/>
+          <ellipse id="Ellipse 10" cx="620" cy="2979.5" rx="64" ry="68.5" fill="#2D641D"/>
+          <ellipse id="Ellipse 11" cx="441" cy="2979.5" rx="64" ry="68.5" fill="#2D641D"/>
+          <ellipse id="Ellipse 12" cx="937" cy="2987.5" rx="64" ry="68.5" fill="#2D641D"/>
+          <ellipse id="Ellipse 13" cx="286" cy="2984.5" rx="64" ry="68.5" fill="#2D641D"/>
+          <ellipse id="Ellipse 14" cx="941" cy="2823.5" rx="64" ry="68.5" fill="#2D641D"/>
+          <ellipse id="Ellipse 15" cx="782" cy="2816.5" rx="64" ry="68.5" fill="#2D641D"/>
+          <ellipse id="Ellipse 16" cx="623" cy="2816.5" rx="64" ry="68.5" fill="#2D641D"/>
+          <ellipse id="Ellipse 17" cx="454" cy="2817.5" rx="64" ry="68.5" fill="#2D641D"/>
+          <ellipse id="Ellipse 18" cx="286" cy="2816.5" rx="64" ry="68.5" fill="#2D641D"/>
+          <ellipse id="Ellipse 19" cx="1473" cy="236.5" rx="64" ry="68.5" fill="#2D641D"/>
+          <ellipse id="Ellipse 20" cx="1311" cy="231.5" rx="64" ry="68.5" fill="#2D641D"/>
+          <ellipse id="Ellipse 21" cx="1132" cy="231.5" rx="64" ry="68.5" fill="#2D641D"/>
+          <ellipse id="Ellipse 22" cx="1628" cy="239.5" rx="64" ry="68.5" fill="#2D641D"/>
+          <ellipse id="Ellipse 23" cx="977" cy="236.5" rx="64" ry="68.5" fill="#2D641D"/>
+          <ellipse id="Ellipse 24" cx="1632" cy="75.5" rx="64" ry="68.5" fill="#2D641D"/>
+          <ellipse id="Ellipse 25" cx="1473" cy="68.5" rx="64" ry="68.5" fill="#2D641D"/>
+          <ellipse id="Ellipse 26" cx="1314" cy="68.5" rx="64" ry="68.5" fill="#2D641D"/>
+          <ellipse id="Ellipse 27" cx="1145" cy="69.5" rx="64" ry="68.5" fill="#2D641D"/>
+          <ellipse id="Ellipse 28" cx="977" cy="68.5" rx="64" ry="68.5" fill="#2D641D"/>
+          <ellipse id="Ellipse 29" cx="2294" cy="243.5" rx="64" ry="68.5" fill="#2D641D"/>
+          <ellipse id="Ellipse 30" cx="2132" cy="238.5" rx="64" ry="68.5" fill="#2D641D"/>
+          <ellipse id="Ellipse 31" cx="1953" cy="238.5" rx="64" ry="68.5" fill="#2D641D"/>
+          <ellipse id="Ellipse 32" cx="2449" cy="246.5" rx="64" ry="68.5" fill="#2D641D"/>
+          <ellipse id="Ellipse 33" cx="1798" cy="243.5" rx="64" ry="68.5" fill="#2D641D"/>
+          <ellipse id="Ellipse 34" cx="2453" cy="82.5" rx="64" ry="68.5" fill="#2D641D"/>
+          <ellipse id="Ellipse 35" cx="2294" cy="75.5" rx="64" ry="68.5" fill="#2D641D"/>
+          <ellipse id="Ellipse 36" cx="2135" cy="75.5" rx="64" ry="68.5" fill="#2D641D"/>
+          <ellipse id="Ellipse 37" cx="1966" cy="76.5" rx="64" ry="68.5" fill="#2D641D"/>
+          <ellipse id="Ellipse 38" cx="1798" cy="75.5" rx="64" ry="68.5" fill="#2D641D"/>
+          <ellipse id="Ellipse 39" cx="2462" cy="849.5" rx="54.5" ry="44" transform="rotate(90 2462 849.5)" fill="#2D641D"/>
+          <ellipse id="Ellipse 40" cx="2465.5" cy="711" rx="55" ry="43.5" transform="rotate(90 2465.5 711)" fill="#2D641D"/>
+          <ellipse id="Ellipse 41" cx="2465.5" cy="558" rx="55" ry="43.5" transform="rotate(90 2465.5 558)" fill="#2D641D"/>
+          <ellipse id="Ellipse 42" cx="2460" cy="981.5" rx="54.5" ry="44" transform="rotate(90 2460 981.5)" fill="#2D641D"/>
+          <ellipse id="Ellipse 43" cx="2462" cy="425.5" rx="54.5" ry="44" transform="rotate(90 2462 425.5)" fill="#2D641D"/>
+          <ellipse id="Ellipse 44" cx="2566" cy="985" rx="55" ry="44" transform="rotate(90 2566 985)" fill="#2D641D"/>
+          <ellipse id="Ellipse 45" cx="2570" cy="849.5" rx="54.5" ry="44" transform="rotate(90 2570 849.5)" fill="#2D641D"/>
+          <ellipse id="Ellipse 46" cx="2570" cy="713.5" rx="54.5" ry="44" transform="rotate(90 2570 713.5)" fill="#2D641D"/>
+          <ellipse id="Ellipse 47" cx="2569.5" cy="569" rx="55" ry="43.5" transform="rotate(90 2569.5 569)" fill="#2D641D"/>
+          <ellipse id="Ellipse 48" cx="2570" cy="425.5" rx="54.5" ry="44" transform="rotate(90 2570 425.5)" fill="#2D641D"/>
+          <ellipse id="Ellipse 49" cx="2458" cy="1550.5" rx="54.5" ry="44" transform="rotate(90 2458 1550.5)" fill="#2D641D"/>
+          <ellipse id="Ellipse 50" cx="2461" cy="1412.5" rx="54.5" ry="44" transform="rotate(90 2461 1412.5)" fill="#2D641D"/>
+          <ellipse id="Ellipse 51" cx="2461" cy="1259.5" rx="54.5" ry="44" transform="rotate(90 2461 1259.5)" fill="#2D641D"/>
+          <ellipse id="Ellipse 52" cx="2456" cy="1683" rx="55" ry="44" transform="rotate(90 2456 1683)" fill="#2D641D"/>
+          <ellipse id="Ellipse 53" cx="2458" cy="1127" rx="55" ry="44" transform="rotate(90 2458 1127)" fill="#2D641D"/>
+          <ellipse id="Ellipse 54" cx="2561" cy="1686.5" rx="54.5" ry="44" transform="rotate(90 2561 1686.5)" fill="#2D641D"/>
+          <ellipse id="Ellipse 55" cx="2566" cy="1550.5" rx="54.5" ry="44" transform="rotate(90 2566 1550.5)" fill="#2D641D"/>
+          <ellipse id="Ellipse 56" cx="2566" cy="1414.5" rx="54.5" ry="44" transform="rotate(90 2566 1414.5)" fill="#2D641D"/>
+          <ellipse id="Ellipse 57" cx="2565" cy="1270.5" rx="54.5" ry="44" transform="rotate(90 2565 1270.5)" fill="#2D641D"/>
+          <ellipse id="Ellipse 58" cx="2566" cy="1127" rx="55" ry="44" transform="rotate(90 2566 1127)" fill="#2D641D"/>
+          <ellipse id="Ellipse 5" cx="897.5" cy="3943" rx="20.5" ry="22" fill="#2D641D"/>
+          <ellipse id="Ellipse 6" cx="897.5" cy="3943" rx="20.5" ry="22" fill="#2D641D"/>
+          <g id="garden" class="clickable">
+            <rect id="Rectangle 9" x="672" y="3915" width="246" height="247" fill="#FF9282"/>
+            <ellipse id="Ellipse 1" cx="726" cy="3968" rx="23" ry="20" fill="#D9D9D9"/>
+            <ellipse id="Ellipse 2" cx="795" cy="4034" rx="23" ry="20" fill="#430200"/>
+            <rect id="Rectangle 11" x="688" y="3948" width="76" height="66" fill="#6E3232"/>
+            <rect id="Rectangle 12" x="688" y="3948" width="76" height="66" fill="#BB6B58"/>
+            <rect id="Rectangle 13" x="688" y="4067" width="76" height="66" fill="#6E3232"/>
+            <rect id="Rectangle 15" x="688" y="4067" width="76" height="66" fill="#BB6B58"/>
+            <rect id="Rectangle 14" x="827" y="3948" width="76" height="66" fill="#BB6B58"/>
+            <rect id="Rectangle 16" x="827" y="4067" width="76" height="66" fill="#BB6B58"/>
+            <ellipse id="Ellipse 7" cx="897.5" cy="4133" rx="20.5" ry="22" fill="#2D641D"/>
+            <ellipse id="Ellipse 8" cx="696.5" cy="4133" rx="20.5" ry="22" fill="#2D641D"/>
+          </g>
+          <rect id="Rectangle 18" x="406" y="3764" width="76" height="70" fill="#D9D9D9"/>
+          <rect id="Rectangle 19" x="406" y="3764" width="76" height="70" fill="#9F958C"/>
+          <rect id="Rectangle 20" x="406" y="3853" width="76" height="70" fill="#9F958C"/>
+          <rect id="Rectangle 21" x="406" y="3939" width="76" height="70" fill="#9F958C"/>
+          <rect id="Rectangle 22" x="406" y="4030" width="76" height="70" fill="#9F958C"/>
+          <rect id="guardhouse" x="274" y="4126" width="219" height="46" fill="#84907B" class="clickable"/>
+          <rect id="gym" x="635" y="3391" width="432" height="497" fill="#324542" class="clickable"/>
+          <rect id="Rectangle 29" x="621" y="3888" width="357" height="18" fill="#CCC2B7"/>
+          <rect id="Rectangle 41" x="251" y="3073" width="982" height="33" fill="#CCC2B7"/>
+          <rect id="ict " x="1038" y="3967" width="122" height="195" fill="#5A676B" class="clickable"/>
+          <rect id="sentro" x="1081" y="3640" width="125" height="307" fill="#6D6353" class="clickable"/>
+          <rect id="principals office" x="518" y="3303" width="549" height="88" fill="#597052" class="clickable"/>
+          <rect id="guidance office" x="312" y="3292" width="193" height="99" fill="#597052" class="clickable"/>
+          <rect id="science lab" x="312" y="3126" width="193" height="147" fill="#384D62" class="clickable"/>
+          <rect id="science garden" x="525" y="3131" width="193" height="147" fill="#6D6353" class="clickable"/>
+          <rect id="clinic new" x="1080" y="3413" width="107" height="147" fill="#6D6353" class="clickable"/>
+          <rect id="mapeh garden" x="756" y="3131" width="193" height="147" fill="#6D6353" class="clickable"/>
+          <rect id="math garden" x="994" y="3131" width="193" height="147" fill="#6D6353" class="clickable"/>
+          <rect id="coop" x="1299" y="2886" width="162" height="147" fill="#3F676A" class="clickable"/>
+          <rect id="avr" y="3518" width="162" height="107" fill="#656F4C" class="clickable"/>
+          <rect id="infoboard" x="284" y="3697" width="198" height="26" fill="#656F4C" class="clickable"/>
+          <rect id="canteen" y="3338" width="162" height="157" fill="#384D53" class="clickable"/>
+          <rect id="grade 10 wing" y="2850" width="162" height="456" fill="#4969AA" class="clickable"/>
+          <rect id="shs building 1" x="1305" y="1790" width="1300" height="298" fill="#D6E3D6" class="clickable"/>
+          <rect id="shs building 2" x="1175" y="336" width="1300" height="298" transform="rotate(90 1175 336)" fill="#D6E3D6" class="clickable"/>
+          <rect id="shs building 3" x="1746" y="336" width="1300" height="298" transform="rotate(90 1746 336)" fill="#D6E3D6" class="clickable"/>
+          <rect id="shs building 4" x="2330" y="336" width="1300" height="298" transform="rotate(90 2330 336)" fill="#D6E3D6" class="clickable"/>
+          <rect id="Rectangle 53" x="1390" y="406" width="1300" height="171" transform="rotate(90 1390 406)" fill="#CCC2B7"/>
+          <rect id="Rectangle 55" x="1974" y="406" width="1300" height="171" transform="rotate(90 1974 406)" fill="#CCC2B7"/>
+          <rect id="Rectangle 51" x="1276" y="1664" width="1083" height="42" fill="#CCC2B7"/>
+        </g>
+      </svg>
+    </div>
+  </div>
+
+  <aside class="info-panel">
+    <div class="info-panel-inner">
+      <div class="hint" id="hint">
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M15 10l-4 4l6 6l4-16l-18 7l4 2l2 6l3-4"/>
+        </svg>
+        Click on any highlighted building on the map to see its description here.
+      </div>
+      <div class="building-info" id="building-info">
+        <div class="tag">Building</div>
+        <h2 id="info-title"></h2>
+        <div class="divider"></div>
+        <p id="info-desc"></p>
+      </div>
+    </div>
+    <div class="legend">
+      <div class="legend-title">Legend</div>
+      <div class="legend-items">
+        <div class="legend-item"><div class="legend-dot" style="background:#3F676A"></div> Grade Level Wings</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#D6E3D6"></div> SHS Buildings</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#4969AA"></div> Grade 10 Wing</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#384D53"></div> Canteen / Facilities</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#597052"></div> Administrative Offices</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#6D6353"></div> Gardens & Labs</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#2D641D; border-radius:50%"></div> Trees</div>
+      </div>
+    </div>
+  </aside>
+</div>
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+<script>
+  const descriptions = {
+    "GRADE 9 WING":      { title: "Grade 9 Wing", desc: "Home to all Grade 9 classrooms and learning spaces for 9th grade students." },
+    "grade 7 wing":      { title: "Grade 7 Wing", desc: "Home to all Grade 7 classrooms, welcoming incoming junior high school students." },
+    "grade 8 wing":      { title: "Grade 8 Wing", desc: "Dedicated classrooms and spaces for Grade 8 students." },
+    "grade 10 rooms":    { title: "Grade 10 Rooms", desc: "Additional classrooms serving Grade 10 students in the junior high school program." },
+    "grade 10 wing":     { title: "Grade 10 Wing", desc: "Main wing housing Grade 10 classrooms and homerooms." },
+    "grade 10 wing 2":   { title: "Grade 10 Wing 2", desc: "A second wing accommodating Grade 10 students, providing extra classroom capacity." },
+    "PPP":               { title: "PPP Building", desc: "Where special program sections reside — home to students enrolled in the school's specialized academic programs." },
+    "shs building 1":    { title: "SHS Building 1", desc: "Senior High School building hosting SHS classrooms and academic activities." },
+    "shs building 2":    { title: "SHS Building 2", desc: "Senior High School building providing classrooms for upper-level senior high students." },
+    "shs building 3":    { title: "SHS Building 3", desc: "Senior High School building offering additional classroom and study space for SHS learners." },
+    "shs building 4":    { title: "SHS Building 4", desc: "Senior High School building supporting the senior high school program with dedicated rooms." },
+    "gym":               { title: "Gymnasium", desc: "The school gymnasium — used for P.E. classes, sports events, assemblies, and other school-wide activities." },
+    "canteen":           { title: "Canteen", desc: "The school cafeteria where students and staff can purchase meals and snacks throughout the school day." },
+    "avr":               { title: "Audio-Visual Room (AVR)", desc: "A dedicated room equipped with audio and visual technology for presentations, screenings, and special school events." },
+    "ict ":              { title: "ICT Building", desc: "Computer laboratories equipped with computers and technology resources for ICT classes and digital learning." },
+    "sentro":            { title: "Sentro", desc: "The Filipino center — a dedicated space celebrating and promoting Filipino language, culture, and literature." },
+    "principals office": { title: "Principal's Office", desc: "The administrative office of the school principal, handling school management and student affairs." },
+    "guidance office":   { title: "Guidance Office", desc: "Where school counselors assist students with academic concerns, personal development, and career guidance." },
+    "science lab":       { title: "Science Laboratory", desc: "A fully equipped laboratory for conducting science experiments and practical activities across Biology, Chemistry, and Physics." },
+    "science garden":    { title: "Science Garden", desc: "An outdoor science garden used for plant studies, environmental science activities, and hands-on learning." },
+    "mapeh garden":      { title: "MAPEH Garden", desc: "A garden space dedicated to Music, Arts, Physical Education, and Health (MAPEH) classes and activities." },
+    "math garden":       { title: "Math Garden", desc: "An outdoor learning space themed around mathematics, used for interactive and visual math activities." },
+    "clinic new":        { title: "School Clinic", desc: "The school health clinic where students can receive first aid, medical attention, and health services during school hours." },
+    "coop":              { title: "Cooperative / Kitchen #2", desc: "Kitchen #2 — a cooperative space used for culinary activities, home economics classes, and food preparation." },
+    "guardhouse":        { title: "Guardhouse", desc: "The security guardhouse at the campus entrance, manned by school security personnel to ensure campus safety." },
+    "garden":            { title: "Garden Area", desc: "A campus garden space featuring plants and greenery, providing a relaxing outdoor environment for students and staff." },
+    "infoboard":         { title: "Information Board", desc: "A bulletin board displaying school announcements, events, and important notices for the campus community." },
+  };
+
+  let activeEl = null;
+
+  document.querySelectorAll('.clickable').forEach(el => {
+    el.addEventListener('click', function(e) {
+      e.stopPropagation();
+
+      const rawId = this.id.trim();
+      const data = descriptions[rawId] || descriptions[this.id];
+
+      if (!data) return;
+
+      // Deactivate previous
+      if (activeEl && activeEl !== this) activeEl.classList.remove('active');
+      this.classList.toggle('active');
+      activeEl = this.classList.contains('active') ? this : null;
+
+      const hint = document.getElementById('hint');
+      const infoDiv = document.getElementById('building-info');
+      const title = document.getElementById('info-title');
+      const desc = document.getElementById('info-desc');
+
+      if (activeEl) {
+        hint.style.display = 'none';
+        title.textContent = data.title;
+        desc.textContent = data.desc;
+        infoDiv.classList.add('visible');
+      } else {
+        hint.style.display = 'block';
+        infoDiv.classList.remove('visible');
+      }
+    });
+  });
+
+  // Click background to deselect
+  document.getElementById('map-svg').addEventListener('click', function() {
+    if (activeEl) {
+      activeEl.classList.remove('active');
+      activeEl = null;
+      document.getElementById('hint').style.display = 'block';
+      document.getElementById('building-info').classList.remove('visible');
+    }
+  });
+</script>
+</body>
+</html>

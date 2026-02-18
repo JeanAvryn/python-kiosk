@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RaMonitor - Main Menu</title>
+    <link rel='icon' href='{{ url_for('static', filename='assets/images/other/favicon.jpg') }}' type='image/x-icon' />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+    <div class="exit-button" onclick="exitToScreensaver()">✕</div>
+    <button class="dark-mode-toggle" onclick="toggleDarkMode()" data-testid="dark-mode-toggle">🌙</button>
+    
+    <div class="container modules-container">
+        <h1 class="page-title">RaMonitor Modules</h1>
+        <p class="page-subtitle">Select a module to explore</p>
+        
+        <div class="modules-grid">
+            <div class="module-box module-button" data-module="campus-map" data-page="/map">
+                <div class="module-icon">🗺️</div>
+                <h3>Virtual Campus Map</h3>
+                <p>Explore our school campus interactively</p>
+            </div>
+            
+            <div class="module-box module-button" data-module="faculty" data-page="/faculty">
+                <div class="module-icon">👥</div>
+                <h3>School Board Directory</h3>
+                <p>View faculty and staff by department</p>
+            </div>
+            
+            <div class="module-box module-button" data-module="news" data-page="/news">
+                <div class="module-icon">📰</div>
+                <h3>School News</h3>
+                <p>Latest announcements and updates</p>
+            </div>
+            
+            <div class="module-box module-button" data-module="research" data-page="/research">
+                <div class="module-icon">📚</div>
+                <h3>Research Repository</h3>
+                <p>Browse student academic research</p>
+            </div>
+            
+            <div class="module-box module-button" data-module="history" data-page="/history">
+                <div class="module-icon">🏛️</div>
+                <h3>School History</h3>
+                <p>Learn about our heritage and legacy</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script>
+        let logged = false;
+
+        async function logAnalytics(role, module) {
+            const now = new Date();
+            await fetch("/api/analytics", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({
+                    role: role,
+                    module_first: module,
+                    date: now.toISOString().split('T')[0],
+                    time: now.toTimeString().split(' ')[0]
+                })
+            });
+        }
+
+        document.querySelectorAll(".module-button").forEach(btn => {
+            btn.addEventListener("click", async () => {
+                const role = localStorage.getItem("kioskRole") || "Unknown";
+                const module = btn.dataset.module;
+                const page = btn.dataset.page;
+
+                if (!logged) {
+                    await logAnalytics(role, module);
+                    logged = true;
+                }
+
+                window.location.href = page;
+            });
+        });
+    </script>
+</body>
+</html>

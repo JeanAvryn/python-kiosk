@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RaMonitor - Ramonian Infohub</title>
+    <link rel='icon' href='{{ url_for('static', filename='assets/images/other/favicon.jpg') }}' type='image/x-icon' />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body class="screensaver-body">
+    <div class="screensaver" id="screensaver">
+        <div class="slideshow-container">
+            <div class="slide active" style="background-image: url('/static/assets/images/screensaver/screen1.jpg');">
+                <div class="overlay"></div>
+            </div>
+            <div class="slide" style="background-image: url('/static/assets/images/screensaver/screen2.jpg');">
+                <div class="overlay"></div>
+            </div>
+            <div class="slide" style="background-image: url('/static/assets/images/screensaver/screen3.jpg');">
+                <div class="overlay"></div>
+            </div>
+            <div class="slide" style="background-image: url('/static/assets/images/screensaver/screen4.jpg');">
+                <div class="overlay"></div>
+            </div>
+            <div class="slide" style="background-image: url('/static/assets/images/screensaver/screen5.jpg');">
+                <div class="overlay"></div>
+            </div>
+            <div class="slide" style="background-image: url('/static/assets/images/screensaver/screen6.jpg');">
+                <div class="overlay"></div>
+            </div>
+        </div>
+        
+        <div class="screensaver-content">
+            <h1 class="screensaver-title">RaMonitor</h1>
+            <p class="screensaver-subtitle">The Ramonian Infohub</p>
+            <div class="tap-prompt">
+                <p>Tap anywhere to continue</p>
+                <div class="tap-indicator"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script>
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        
+        function showNextSlide() {
+            slides[currentSlide].classList.remove('active');
+            currentSlide = (currentSlide + 1) % slides.length;
+            slides[currentSlide].classList.add('active');
+        }
+        
+        setInterval(showNextSlide, 4000);
+        
+        document.getElementById('screensaver').addEventListener('click', function() {
+            window.location.href = '/role-selector';
+        });
+    </script>
+</body>
+</html>
